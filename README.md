@@ -10,7 +10,7 @@ This project simplifies running Pterodactyl Panel and Wings within Docker contai
 ## Clone repository
 
 ```bash
-git clone https://github.com/EdyTheCow/pterodactyl-docker.git
+git clone https://github.com/rattatude/pterodactyl-docker.git
 ```
 
 
