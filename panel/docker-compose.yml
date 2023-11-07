@@ -1,11 +1,12 @@
 version: "3.8"
+
 services:
-  traefik:
+  proxy:
     image: traefik:latest
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${HTTPS_PORT}:${HTTPS_PORT}"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "${DATA_DIR}/traefik/acme.json:/acme.json"
@@ -15,17 +16,18 @@ services:
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:${HTTP_PORT}"
+      - "--entrypoints.websecure.address=:${HTTPS_PORT}"
       - "--certificatesresolvers.letsencrypt.acme.email=${SSL_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=hetzner"
-  mysql:
+  
+  database:
     image: mysql:8
     restart: always
     volumes:
-      - "${DATA_DIR}/database/:/var/lib/mysql/"
+      - "${DATA_DIR}/mysql/:/var/lib/mysql/"
     environment:
       MYSQL_DATABASE: "panel"
       MYSQL_USER: "pterodactyl"
@@ -33,16 +35,18 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: "true"
       MYSQL_ONETIME_PASSWORD: ""
       TZ: "${TIMEZONE}"
-  redis:
+ 
+  cache:
     image: redis:alpine
     restart: always
     environment:
       TZ: "${TIMEZONE}"
+  
   panel:
     image: ghcr.io/pterodactyl/panel:latest
     restart: always
     depends_on:
-      - traefik
+      - proxy
       - database
       - cache
     volumes:
@@ -62,6 +66,7 @@ services:
       QUEUE_DRIVER: "redis"
       TZ: "${TIMEZONE}"
     labels:
+      - "traefik.enable=true"
       # HTTP Configuration 
       - "traefik.http.routers.panel.entrypoints=web"
       - "traefik.http.routers.panel.rule=Host(`${PANEL_DOMAIN}`)"
@@ -72,7 +77,8 @@ services:
       - "traefik.http.routers.panelsecure.rule=Host(`${PANEL_DOMAIN}`)"
       - "traefik.http.routers.panelsecure.tls=true"
       - "traefik.http.routers.panelsecure.tls.certresolver=letsencrypt"
-      - "traefik.http.services.panelsecure.loadbalancer.server.port=80"
+      - "traefik.http.services.panelsecure.loadbalancer.server.port=${HTTP_PORT}"
+
 networks:
   default:
     ipam:
