@@ -1,0 +1,127 @@
+version: "3.8"
+services:
+  traefik:
+    image: traefik:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "${DATA_DIR}/traefik/acme.json:/acme.json"
+    environment:
+      HETZNER_API_KEY: "${HETZNER_KEY}"
+      TZ: "${TIMEZONE}"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=${SSL_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=hetzner"
+  mysql:
+    image: mysql:8
+    restart: always
+    volumes:
+      - "${DATA_DIR}/database/:/var/lib/mysql/"
+    environment:
+      MYSQL_DATABASE: "panel"
+      MYSQL_USER: "pterodactyl"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_ONETIME_PASSWORD: ""
+      TZ: "${TIMEZONE}"
+  redis:
+    image: redis:alpine
+    restart: always
+    environment:
+      TZ: "${TIMEZONE}"
+  panel:
+    image: ghcr.io/pterodactyl/panel:latest
+    restart: always
+    depends_on:
+      - traefik
+      - database
+      - cache
+    volumes:
+      - "${DATA_DIR}/panel/var/:/app/var/"
+      - "${DATA_DIR}/panel/nginx/:/etc/nginx/http.d/"
+      - "${DATA_DIR}/panel/logs/:/app/storage/logs/"
+    environment:
+      APP_URL: "https://${PANEL_DOMAIN}"
+      APP_KEY: "base64:BEuB/rCl2ceN3vmGLT2iQuIIeLqRbc++R6o6CSYPRaY="
+      APP_TIMEZONE: "${TIMEZONE}"
+      APP_ENVIRONMENT_ONLY: "false"
+      DB_HOST: "database"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      REDIS_HOST: "cache"
+      CACHE_DRIVER: "redis"
+      SESSION_DRIVER: "redis"
+      QUEUE_DRIVER: "redis"
+      TZ: "${TIMEZONE}"
+    labels:
+      # HTTP Configuration 
+      - "traefik.http.routers.panel.entrypoints=web"
+      - "traefik.http.routers.panel.rule=Host(`${PANEL_DOMAIN}`)"
+      - "traefik.http.routers.panel.middlewares=panelhttps"
+      - "traefik.http.middlewares.panelhttps.redirectscheme.scheme=https"
+      # HTTPS Configuration 
+      - "traefik.http.routers.panelsecure.entrypoints=websecure"
+      - "traefik.http.routers.panelsecure.rule=Host(`${PANEL_DOMAIN}`)"
+      - "traefik.http.routers.panelsecure.tls=true"
+      - "traefik.http.routers.panelsecure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.panelsecure.loadbalancer.server.port=80"
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# traefik:
+#   image: traefik:latest
+#   restart: always
+#   ports:
+#     - "80:80"
+#     - "443:443"
+#   volumes:
+#     - "/var/run/docker.sock:/var/run/docker.sock"
+#     - "${DATA_DIR}/acme.json:/acme.json"
+#   environment:
+#     HETZNER_API_KEY: "${HETZNER_KEY}"
+#   command:
+#     # traeffik setup
+#     - "--providers.docker=true"
+#     - "--providers.docker.exposedbydefault=false"
+#     - "--entrypoints.http.address=:80"
+#     - "--entrypoints.web.http.redirections.entryPoint.to=https"
+#     - "--entrypoints.https.address=:443"
+#     - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL}"
+#     - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+#     - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+#     - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=hetzner"
+#
+# nginx:
+#   image: joshuawalsh/nginx-for-php-fpm
+#   restart: always
+#   depends_on:
+#     - pterodactyl
+#   ports:
+#     - 5080:80
+#   volumes:
+#     - public:/var/www/html/
+#
+# caddy:
+#   image: fariszr/caddy-dns:hetzner-alpine
+#   restart: always
+#   depends_on:
+#     - pterodactyl
+#   ports:
+#     - "80:80"
+#     - "443:443"
+#   volumes:
+#     - "${DATA_DIR}/pterodactyl/public:/var/www/html/"
+#     - "${DATA_DIR}/caddy/Caddyfile:/etc/caddy/Caddyfile"
+#     - "${DATA_DIR}/caddy/data:/data"
+#     - "${DATA_DIR}/caddy/config:/config"

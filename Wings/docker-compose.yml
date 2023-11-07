@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+  traefik:
+    image: traefik:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "${DATA_DIR}/traefik/acme.json:/acme.json"
+    environment:
+      HETZNER_API_KEY: "${HETZNER_KEY}"
+      TZ: "${TIMEZONE}"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=${SSL_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=hetzner"
+  wings:
+    image: ghcr.io/pterodactyl/wings:latest
+    restart: always
+    depends_on:
+      - traefik
+    networks:
+      - wings0
+    ports:
+      - "2022:2022"
+    tty: true
+    environment:
+      TZ: "${TIMEZONE}"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/lib/docker/containers/:/var/lib/docker/containers/"
+      - "/tmp/pterodactyl/:/tmp/pterodactyl/"
+      - "${DATA_DIR}/wings/etc/:/etc/pterodactyl/"
+      - "${DATA_DIR}/wings/logs:/var/log/pterodactyl/"
+      - "${SERVERS_DIR}:${SERVERS_DIR}"
+      # SSL Configuration: Uncomment one of the following lines based on your host system for HTTPS usage.
+      # Uncomment this line if your host is based on Ubuntu/Debian:
+      # - "/etc/ssl/certs:/etc/ssl/certs:ro"
+      # Uncomment this line if your host is based on RHEL/Alma/Rocky/CentOS/Fedora:
+      # - "/etc/ssl/certs/ca-certificates.crt:/etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt:ro"
+    labels:
+      # HTTP Configuration 
+      - "traefik.http.routers.wings.entrypoints=web"
+      - "traefik.http.routers.wings.rule=Host(`${WINGS_DOMAIN}`)"
+      - "traefik.http.routers.wings.middlewares=wingshttps"
+      - "traefik.http.middlewares.wingshttps.redirectscheme.scheme=https"
+      # HTTPS Configuration 
+      - "traefik.http.routers.wingssecure.entrypoints=websecure"
+      - "traefik.http.routers.wingssecure.rule=Host(`${WINGS_DOMAIN}`)"
+      - "traefik.http.routers.wingssecure.tls=true"
+      - "traefik.http.routers.wingssecure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.wingssecure.loadbalancer.server.port=80"
+networks:
+  wings0:
+    name: wings0
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.21.0.0/16"
+    driver_opts:
+      com.docker.network.bridge.name: wings0
