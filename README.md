@@ -75,3 +75,62 @@ sudo docker-compose run --rm panel php artisan p:user:make
 Follow the prompts to set up the administrative account, and you're all set! Your Pterodactyl Panel installation is now complete, and you can begin managing your game servers with ease.
 
 If you encounter any issues or have questions, please feel free to open an issue in this GitHub repository. I am here to assist you. Happy gaming!
+
+# Pterodactyl Wings Installation Guide
+
+This step-by-step walkthrough will assist you in setting up Pterodactyl Wings within a Docker environment. Before you start, make sure you have the following installed on your system:
+
+- Docker
+- Docker Compose
+- curl
+- unzip
+- sudo
+
+## Download and Prepare the Repository
+
+Begin by downloading the Pterodactyl Docker repository:
+
+```bash
+curl -LJO https://github.com/rattatude/pterodactyl-docker/archive/refs/heads/develop.zip
+```
+
+Next, unzip the downloaded file and rename the directory for clarity:
+
+```bash
+unzip pterodactyl-docker-develop.zip
+mv pterodactyl-docker-develop pterodactyl
+cd pterodactyl/wings/
+```
+
+## Set Permissions and Configure Wings
+
+Ensure the correct permissions for essential files:
+
+```bash
+sudo chmod 600 data/traefik/acme.json
+```
+
+Edit the environment and configuration files to your requirements:
+
+```bash
+vi .env
+vi data/wings/etc/config.yml
+```
+
+## Launch Pterodactyl Wings
+
+Start the Docker container in the background:
+
+```bash
+sudo docker-compose up -d
+```
+
+Optionally, check the container logs for any errors:
+
+```bash
+sudo docker-compose logs -f
+```
+
+Your Pterodactyl Wings installation is now running successfully!
+
+If you encounter any issues or have questions, please feel free to open an issue in this GitHub repository. I am here to assist you. Happy gaming!
