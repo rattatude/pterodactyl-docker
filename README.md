@@ -21,14 +21,14 @@ This step-by-step walkthrough will assist you in setting up your Pterodactyl pan
 First, download the Pterodactyl Docker repository:
 
 ```bash
-curl -LJO https://github.com/rattatude/pterodactyl-docker/archive/refs/heads/develop.zip
+curl -LJO https://github.com/rattatude/pterodactyl-docker/archive/refs/heads/main.zip
 ```
 
 Next, unzip the downloaded file and rename the directory for clarity:
 
 ```bash
-unzip pterodactyl-docker-develop.zip
-mv pterodactyl-docker-develop pterodactyl
+unzip pterodactyl-docker-main.zip
+mv pterodactyl-docker-main pterodactyl
 cd pterodactyl/panel/
 ```
 
@@ -91,14 +91,14 @@ This step-by-step walkthrough will assist you in setting up Pterodactyl Wings wi
 Begin by downloading the Pterodactyl Docker repository:
 
 ```bash
-curl -LJO https://github.com/rattatude/pterodactyl-docker/archive/refs/heads/develop.zip
+curl -LJO https://github.com/rattatude/pterodactyl-docker/archive/refs/heads/main.zip
 ```
 
 Next, unzip the downloaded file and rename the directory for clarity:
 
 ```bash
-unzip pterodactyl-docker-develop.zip
-mv pterodactyl-docker-develop pterodactyl
+unzip pterodactyl-docker-main.zip
+mv pterodactyl-docker-main pterodactyl
 cd pterodactyl/wings/
 ```
 
