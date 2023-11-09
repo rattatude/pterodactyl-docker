@@ -44,6 +44,8 @@ services:
   
   panel:
     image: ghcr.io/pterodactyl/panel:latest
+    env_file:
+      - .env
     restart: always
     depends_on:
       - proxy

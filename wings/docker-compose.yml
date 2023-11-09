@@ -23,6 +23,8 @@ services:
   
   wings:
     image: ghcr.io/pterodactyl/wings:latest
+    env_file:
+      - .env
     restart: always
     depends_on:
       - proxy
