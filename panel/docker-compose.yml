@@ -1,0 +1,88 @@
+version: "3.8"
+
+services:
+  proxy:
+    image: traefik:latest
+    restart: always
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${HTTPS_PORT}:${HTTPS_PORT}"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "${DATA_DIR}/traefik/acme.json:/acme.json"
+    environment:
+      HETZNER_API_KEY: "${HETZNER_KEY}"
+      TZ: "${TIMEZONE}"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:${HTTP_PORT}"
+      - "--entrypoints.websecure.address=:${HTTPS_PORT}"
+      - "--certificatesresolvers.letsencrypt.acme.email=${SSL_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=hetzner"
+  
+  database:
+    image: mysql:8
+    restart: always
+    volumes:
+      - "${DATA_DIR}/mysql/:/var/lib/mysql/"
+    environment:
+      MYSQL_DATABASE: "panel"
+      MYSQL_USER: "pterodactyl"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_ONETIME_PASSWORD: ""
+      TZ: "${TIMEZONE}"
+ 
+  cache:
+    image: redis:alpine
+    restart: always
+    environment:
+      TZ: "${TIMEZONE}"
+  
+  panel:
+    image: ghcr.io/pterodactyl/panel:latest
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - proxy
+      - database
+      - cache
+    volumes:
+      - "${DATA_DIR}/panel/var/:/app/var/"
+      - "${DATA_DIR}/panel/nginx/:/etc/nginx/http.d/"
+      - "${DATA_DIR}/panel/logs/:/app/storage/logs/"
+    environment:
+      APP_URL: "https://${PANEL_DOMAIN}"
+      APP_KEY: "base64:BEuB/rCl2ceN3vmGLT2iQuIIeLqRbc++R6o6CSYPRaY="
+      APP_TIMEZONE: "${TIMEZONE}"
+      APP_ENVIRONMENT_ONLY: "false"
+      DB_HOST: "database"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      REDIS_HOST: "cache"
+      CACHE_DRIVER: "redis"
+      SESSION_DRIVER: "redis"
+      QUEUE_DRIVER: "redis"
+      TZ: "${TIMEZONE}"
+    labels:
+      - "traefik.enable=true"
+      # HTTP Configuration 
+      - "traefik.http.routers.panel.entrypoints=web"
+      - "traefik.http.routers.panel.rule=Host(`${PANEL_DOMAIN}`)"
+      - "traefik.http.routers.panel.middlewares=panelhttps"
+      - "traefik.http.middlewares.panelhttps.redirectscheme.scheme=https"
+      # HTTPS Configuration 
+      - "traefik.http.routers.panelsecure.entrypoints=websecure"
+      - "traefik.http.routers.panelsecure.rule=Host(`${PANEL_DOMAIN}`)"
+      - "traefik.http.routers.panelsecure.tls=true"
+      - "traefik.http.routers.panelsecure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.panelsecure.loadbalancer.server.port=${HTTP_PORT}"
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
