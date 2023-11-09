@@ -2,56 +2,76 @@
 
 Pterodactyl Dockerized with Traefik and Hetzner DNS
 
-This project simplifies running Pterodactyl Panel and Wings within Docker containers. Utilizing Traefik as a reverse proxy, it ensures secure connections by automatically generating SSL certificates through Traefik, using Hetzner DNS as a Let's Encrypt provider. Experience effortless deployment and robust security, all in one integrated solution.
+Welcome to a streamlined way of deploying Pterodactyl Panel and Wings in Docker containers. This project makes the process user-friendly, ensuring your setup is both easy and secure. With Traefik as a reverse proxy, SSL certificates are automatically generated using Hetzner DNS.
 
+**!! NOTE !!** This solution is designed to run either the Panel or Wings on a single machine, not both simultaneously!
 
-# Installation
+# Pterodactyl Panel Installation Guide
 
-## Clone repository
+This step-by-step walkthrough will assist you in setting up your Pterodactyl panel within a Docker environment. Before you begin, ensure you have the following installed on your system:
+
+- Docker
+- Docker Compose
+- curl
+- unzip
+- sudo
+
+## Download and Prepare the Repository
+
+First, download the Pterodactyl Docker repository:
 
 ```bash
-git clone https://github.com/rattatude/pterodactyl-docker.git
+curl -LJO https://github.com/rattatude/pterodactyl-docker/archive/refs/heads/develop.zip
 ```
 
+Next, unzip the downloaded file and rename the directory for clarity:
 
-## Set correct permissions
-
-Go to data/traefik/ within the 'Wings' or 'Panel' directory, and execute the following command:
 ```bash
-cd data/traefik/
-sudo chmod 600 acme.json
+unzip pterodactyl-docker-develop.zip
+mv pterodactyl-docker-develop pterodactyl
+cd pterodactyl/panel/
 ```
 
+## Set Permissions and Configure the Panel
 
-## Configure the Pterodactyl Panel/Wings
+Ensure the correct permissions for essential files:
 
-To customize your Pterodactyl Panel or Wings, open the `.env` file in your preferred text editor. For instance, if you prefer using `vi`, execute the following command in the respective 'Panel' or 'Wings' directory:
 ```bash
-sudo vi .env
+sudo chmod 600 data/traefik/acme.json
 ```
-Then just modify the configuration according to your needs.
 
-## That's it! You're all set.
+Edit the configuration file to your needs:
 
-Now, simply launch the Docker Compose environment by running the following command:
 ```bash
-sudo docker compose up -d
-```
-This will start your configured services in the background. Your Pterodactyl Panel or Wings should now be up and running.
-
-Certainly! Here's the updated instruction:
-
-**NOTE**
-
-If you're starting the Wings agent, you'll need to customize the `config.yml` file. Navigate to `data/wings/etc/` inside the 'wings' directory and edit the `config.yml` using your preferred text editor. For example, if you prefer `vi`:
-```
-cd wings/data/wings/etc/
-sudo vi config.yml
+vi .env
 ```
 
-Make the necessary modifications in the `config.yml` file to suit your requirements. Once you've made the changes, save the file and proceed with starting the Wings agent using:
-```
-sudo docker compose up -d
+## Launch the Pterodactyl Panel
+
+Start the Docker container in the background:
+
+```bash
+sudo docker-compose up -d
 ```
 
-This ensures that both the Pterodactyl Panel and Wings agent are properly configured and running.
+Optionally, check the container logs for any errors:
+
+```bash
+sudo docker-compose logs -f
+```
+
+## Verify the Panel Setup
+
+Visit the domain you configured earlier in your browser. Please be patient, as it might take a few minutes for the SSL certificate to be generated. Once the panel is up and running, you're ready to proceed.
+
+## Create an Administrative User
+
+Finally, create an administrative user for your Pterodactyl panel:
+
+```bash
+sudo docker-compose run --rm panel php artisan p:user:make
+```
+
+Follow the prompts to set up the administrative account, and you're all set! Your Pterodactyl Panel installation is now complete, and you can begin managing your game servers with ease.
+
+If you encounter any issues or have questions, please feel free to open an issue in this GitHub repository. I am here to assist you. Happy gaming!
