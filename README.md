@@ -51,13 +51,13 @@ vi .env
 Start the Docker container in the background:
 
 ```bash
-sudo docker-compose up -d
+sudo docker compose up -d
 ```
 
 Optionally, check the container logs for any errors:
 
 ```bash
-sudo docker-compose logs -f
+sudo docker compose logs -f
 ```
 
 ## Verify the Panel Setup
@@ -69,7 +69,7 @@ Visit the domain you configured earlier in your browser. Please be patient, as i
 Finally, create an administrative user for your Pterodactyl panel:
 
 ```bash
-sudo docker-compose run --rm panel php artisan p:user:make
+sudo docker compose run --rm panel php artisan p:user:make
 ```
 
 Follow the prompts to set up the administrative account, and you're all set! Your Pterodactyl Panel installation is now complete, and you can begin managing your game servers with ease.
@@ -122,13 +122,13 @@ vi data/wings/etc/config.yml
 Start the Docker container in the background:
 
 ```bash
-sudo docker-compose up -d
+sudo docker compose up -d
 ```
 
 Optionally, check the container logs for any errors:
 
 ```bash
-sudo docker-compose logs -f
+sudo docker compose logs -f
 ```
 
 Your Pterodactyl Wings installation is now running successfully!
