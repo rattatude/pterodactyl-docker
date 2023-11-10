@@ -28,8 +28,6 @@ services:
     restart: always
     depends_on:
       - proxy
-    networks:
-      - wings0
     ports:
       - "${SFTP_PORT}:${SFTP_PORT}"
     tty: true
